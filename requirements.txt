@@ -1,8 +1,8 @@
+streamlit
 transformers
 torch
 tweepy
-streamlit
 pymongo
-pandas
 matplotlib
 wordcloud
+pandas
