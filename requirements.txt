@@ -6,3 +6,4 @@ pymongo
 matplotlib
 wordcloud
 pandas
+python-dotenv
