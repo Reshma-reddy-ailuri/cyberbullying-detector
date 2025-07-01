@@ -41,7 +41,7 @@ elif page == "📊 Dashboard":
 
     try:
         # Connect to MongoDB
-        client = MongoClient(MONGO_URI)
+        client = MongoClient(MONGO_URI, tls=True)
         db = client["cyberbullying_db"]
         collection = db["tweets"]
         tweets = list(collection.find())

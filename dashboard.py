@@ -13,7 +13,7 @@ st.title("📊 Stored Tweets Dashboard")
 
 try:
     # Connect to MongoDB Atlas
-    client = MongoClient(MONGO_URI)
+    client = MongoClient(MONGO_URI, tls=True)
     db = client["cyberbullying_db"]
     collection = db["tweets"]
     tweets = list(collection.find())
