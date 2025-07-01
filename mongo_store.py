@@ -1,18 +1,20 @@
-import os
-from pymongo import MongoClient
-from dotenv import load_dotenv
+# mongo_store.py
 
-# ✅ Use streamlit only when running on Streamlit Cloud
+from pymongo import MongoClient
+
+# ✅ Detect environment and load MONGO_URI
 try:
+    # When running on Streamlit Cloud
     import streamlit as st
-    mongo_uri = os.getenv("MONGO_URI") or st.secrets["MONGO_URI"]
+    mongo_uri = st.secrets["MONGO_URI"]
 except ImportError:
-    # Not running in Streamlit Cloud (e.g., local)
+    # When running locally
+    import os
+    from dotenv import load_dotenv
     load_dotenv()
     mongo_uri = os.getenv("MONGO_URI")
 
-print("🔍 Loaded MONGO_URI:", mongo_uri)
-
+# ✅ Safety check
 if not mongo_uri:
     raise ValueError("❌ MONGO_URI not found in .env or Streamlit secrets")
 
