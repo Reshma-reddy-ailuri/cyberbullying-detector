@@ -2,10 +2,27 @@
 import streamlit as st
 import pandas as pd
 from bert_model import BERTClassifier
-from pymongo import MongoClient
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from mongo_store import save_to_mongo
+from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
+
+# Load Mongo URI
+try:
+    mongo_uri = os.getenv("MONGO_URI") or st.secrets["MONGO_URI"]
+except:
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI")
+
+if not mongo_uri:
+    st.error("❌ MONGO_URI not found.")
+    st.stop()
+
+client = MongoClient(mongo_uri)
+db = client["cyberbullying_db"]
+collection = db["tweets"]
 
 # Initialize BERT model
 model = BERTClassifier()
@@ -17,6 +34,7 @@ st.title("🤖 AI-Powered Cyberbullying & Mental Health Dashboard")
 # Navigation tabs
 page = st.sidebar.selectbox("Choose a view:", ["🔍 Live Prediction", "📊 Dashboard"])
 
+# Page 1: Live Prediction
 if page == "🔍 Live Prediction":
     st.header("🔍 Detect Toxicity in a Social Media Post")
     st.markdown("Use our fine-tuned BERT model to classify content as safe or toxic.")
@@ -28,19 +46,16 @@ if page == "🔍 Live Prediction":
         else:
             with st.spinner("Analyzing..."):
                 result = model.predict(text)
+                save_to_mongo(text, result[0], result[1])  # Save to MongoDB
             st.success("✅ Analysis Complete!")
             st.write(f"🟢 Safe Content Probability: {result[0]*100:.2f}%")
             st.write(f"🔴 Cyberbullying/Toxic Content Probability: {result[1]*100:.2f}%")
 
+# Page 2: Dashboard
 elif page == "📊 Dashboard":
     st.header("📊 Tweet Analysis Dashboard")
 
-    # Connect to MongoDB
     try:
-        client = MongoClient("mongodb://localhost:27017/")
-        db = client["cyberbullying_db"]
-        collection = db["tweets"]
-
         tweets = list(collection.find())
         df = pd.DataFrame(tweets)
 
@@ -52,7 +67,7 @@ elif page == "📊 Dashboard":
             if keyword:
                 df = df[df['text'].str.contains(keyword, case=False, na=False)]
 
-            # Sort by toxic score
+            # Sort by score
             sort_by = st.selectbox("📌 Sort by", ["safe_score", "toxic_score"])
             df = df.sort_values(by=sort_by, ascending=False)
 
@@ -60,7 +75,7 @@ elif page == "📊 Dashboard":
             csv = df.to_csv(index=False)
             st.download_button("⬇️ Download as CSV", csv, "tweets.csv", "text/csv")
 
-            # Show table
+            # Data table
             st.dataframe(df.style.format({"safe_score": "{:.2f}", "toxic_score": "{:.2f}"}))
 
             # Word Cloud
@@ -78,11 +93,11 @@ elif page == "📊 Dashboard":
             else:
                 st.info("Not enough toxic tweets yet to generate a word cloud.")
 
-            # Summary chart
+            # Bar chart
             st.subheader("📈 Toxicity Distribution")
             st.bar_chart(df[['safe_score', 'toxic_score']])
         else:
             st.warning("⚠️ No tweets found in the database yet.")
 
     except Exception as e:
-        st.error(f"❌ Failed to connect to MongoDB: {e}")
+        st.error(f"❌ Failed to load dashboard: {e}")

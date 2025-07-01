@@ -1,13 +1,24 @@
 # dashboard.py
-
+import streamlit as st
+import pandas as pd
+from pymongo import MongoClient
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-import streamlit as st
-from pymongo import MongoClient
-import pandas as pd
+import os
+from dotenv import load_dotenv
 
-# Connect to MongoDB
-client = MongoClient("mongodb://localhost:27017/")
+# Load Mongo URI
+try:
+    mongo_uri = os.getenv("MONGO_URI") or st.secrets["MONGO_URI"]
+except:
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI")
+
+if not mongo_uri:
+    st.error("❌ MONGO_URI not found.")
+    st.stop()
+
+client = MongoClient(mongo_uri)
 db = client["cyberbullying_db"]
 collection = db["tweets"]
 
@@ -56,6 +67,5 @@ if not df.empty:
         st.pyplot(fig)
     else:
         st.info("Not enough toxic tweets yet to generate a word cloud.")
-
 else:
     st.warning("⚠️ No tweets found in the database yet.")
