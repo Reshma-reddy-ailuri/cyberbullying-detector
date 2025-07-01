@@ -5,6 +5,7 @@ from bert_model import BERTClassifier
 from pymongo import MongoClient
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+from mongo_store import save_to_mongo
 
 # Initialize BERT model
 model = BERTClassifier()
