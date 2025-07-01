@@ -1,19 +1,22 @@
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
-import streamlit as st  # ✅ Required for reading secrets on Streamlit Cloud
 
-# ✅ Load from .env (for local use)
-load_dotenv()
+# ✅ Use streamlit only when running on Streamlit Cloud
+try:
+    import streamlit as st
+    mongo_uri = os.getenv("MONGO_URI") or st.secrets["MONGO_URI"]
+except ImportError:
+    # Not running in Streamlit Cloud (e.g., local)
+    load_dotenv()
+    mongo_uri = os.getenv("MONGO_URI")
 
-# ✅ First try env, then try Streamlit secrets
-mongo_uri = os.getenv("MONGO_URI") or st.secrets.get("MONGO_URI")
 print("🔍 Loaded MONGO_URI:", mongo_uri)
 
 if not mongo_uri:
     raise ValueError("❌ MONGO_URI not found in .env or Streamlit secrets")
 
-# ✅ Connect to MongoDB
+# ✅ Connect to MongoDB Atlas
 try:
     client = MongoClient(mongo_uri)
     db = client["cyberbullying_db"]
@@ -21,7 +24,7 @@ try:
 except Exception as e:
     raise ConnectionError(f"❌ Failed to connect to MongoDB: {e}")
 
-# ✅ Save document function
+# ✅ Save tweet data to MongoDB
 def save_to_mongo(tweet, safe_score, toxic_score):
     document = {
         "text": str(tweet),
